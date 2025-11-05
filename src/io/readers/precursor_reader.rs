@@ -2,6 +2,8 @@
 mod minitdf;
 #[cfg(feature = "tdf")]
 mod tdf;
+#[cfg(feature = "tsf")]
+mod tsf;
 
 use core::fmt;
 
@@ -9,6 +11,8 @@ use core::fmt;
 use minitdf::{MiniTDFPrecursorReader, MiniTDFPrecursorReaderError};
 #[cfg(feature = "tdf")]
 use tdf::{TDFPrecursorReader, TDFPrecursorReaderError};
+#[cfg(feature = "tsf")]
+use tsf::TSFPrecursorReader;
 
 use crate::ms_data::Precursor;
 
@@ -88,6 +92,11 @@ impl PrecursorReaderBuilder {
                 #[cfg(feature = "tdf")]
                 TimsTofFileType::TDF => {
                     Box::new(TDFPrecursorReader::new(path, self.config)?)
+                },
+                // added to keep interface consistent. this returns none for the TSF precursor reader
+                #[cfg(feature = "tsf")]
+                TimsTofFileType::TSF => {
+                    Box::new(TSFPrecursorReader::new(path))
                 },
             };
         let reader = PrecursorReader { precursor_reader };

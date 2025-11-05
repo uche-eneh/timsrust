@@ -9,7 +9,7 @@ use super::{
     file_readers::sql_reader::{
         metadata::SqlMetadata, ReadableSqlHashMap, SqlReader, SqlReaderError,
     },
-    TimsTofPathLike,
+    TimsTofFileType, TimsTofPathError, TimsTofPathLike,
 };
 
 const OTOF_CONTROL: &str = "Bruker otofControl";
@@ -20,38 +20,57 @@ impl MetadataReader {
     pub fn new(
         path: impl TimsTofPathLike,
     ) -> Result<Metadata, MetadataReaderError> {
-        let tdf_sql_reader = SqlReader::open(path)?;
+        let tims_path = path.to_timstof_path()?;
+        let tdf_sql_reader = SqlReader::open(&tims_path)?;
         let sql_metadata: HashMap<String, String> =
             SqlMetadata::from_sql_reader(&tdf_sql_reader)?;
         let compression_type =
             parse_value(&sql_metadata, "TimsCompressionType")?;
-        let (mz_min, mz_max) = get_mz_bounds(&sql_metadata)?;
-        let (im_min, im_max) = get_im_bounds(&sql_metadata)?;
         let rt_values: Vec<f64> =
             tdf_sql_reader.read_column_from_table("Time", "Frames")?;
-        let rt_min = rt_values
-            .iter()
-            .filter(|&&v| !v.is_nan()) // Filter out NaN values
-            .cloned()
-            .min_by(|a, b| a.partial_cmp(b).unwrap())
-            .unwrap();
-        let rt_max = rt_values
-            .iter()
-            .filter(|&&v| !v.is_nan()) // Filter out NaN values
-            .cloned()
-            .max_by(|a, b| a.partial_cmp(b).unwrap())
-            .unwrap();
-        let metadata = Metadata {
-            rt_converter: Frame2RtConverter::from_values(rt_values),
-            im_converter: get_im_converter(&sql_metadata, &tdf_sql_reader)?,
-            mz_converter: get_mz_converter(&sql_metadata)?,
-            lower_rt: rt_min,
-            upper_rt: rt_max,
-            lower_im: im_min,
-            upper_im: im_max,
-            lower_mz: mz_min,
-            upper_mz: mz_max,
-            compression_type,
+        let (rt_min, rt_max) = get_rt_numeric_bounds(&rt_values)?;
+        let rt_converter = Frame2RtConverter::from_values(rt_values);
+        let (mz_min, mz_max) = get_mz_bounds(&sql_metadata)?;
+        let mz_converter = get_mz_converter(&sql_metadata)?;
+        let metadata = match tims_path.file_type() {
+            #[cfg(feature = "tdf")]
+            TimsTofFileType::TDF => {
+                let (im_min, im_max) = get_im_bounds(&sql_metadata)?;
+                Metadata {
+                    rt_converter,
+                    im_converter: Some(get_im_converter(
+                        &sql_metadata,
+                        &tdf_sql_reader,
+                    )?),
+                    mz_converter,
+                    compression_type,
+                    lower_rt: rt_min,
+                    upper_rt: rt_max,
+                    lower_im: Some(im_min),
+                    upper_im: Some(im_max),
+                    lower_mz: mz_min,
+                    upper_mz: mz_max,
+                }
+            },
+            #[cfg(feature = "tsf")]
+            TimsTofFileType::TSF => Metadata {
+                rt_converter,
+                im_converter: None,
+                mz_converter,
+                compression_type,
+                lower_rt: rt_min,
+                upper_rt: rt_max,
+                lower_im: None,
+                upper_im: None,
+                lower_mz: mz_min,
+                upper_mz: mz_max,
+            },
+            #[cfg(feature = "minitdf")]
+            TimsTofFileType::MiniTDF => {
+                return Err(MetadataReaderError::UnsupportedFileType(
+                    "MiniTDF".to_string(),
+                ))
+            },
         };
         Ok(metadata)
     }
@@ -110,6 +129,22 @@ fn get_im_converter(
     ))
 }
 
+fn get_rt_numeric_bounds(values: &[f64]) -> Result<(f64, f64), MetadataReaderError> {
+    let min = values
+        .iter()
+        .filter(|&&v| !v.is_nan())  // Filter out NaN values
+        .cloned()
+        .min_by(|a, b| a.partial_cmp(b).unwrap())
+        .ok_or(MetadataReaderError::MissingRtBounds)?;
+    let max = values
+        .iter()
+        .filter(|&&v| !v.is_nan())  // Filter out NaN values
+        .cloned()
+        .max_by(|a, b| a.partial_cmp(b).unwrap())
+        .ok_or(MetadataReaderError::MissingRtBounds)?;
+    Ok((min, max))
+}
+
 fn parse_value<T: FromStr>(
     hash_map: &HashMap<String, String>,
     key: &str,
@@ -130,4 +165,10 @@ pub enum MetadataReaderError {
     KeyNotFound(String),
     #[error("Key not parsable: {0}")]
     ParseError(String),
+    #[error("Retention time metadata did not contain any usable values")]
+    MissingRtBounds,
+    #[error("Unsupported file type: {0}")]
+    UnsupportedFileType(String),
+    #[error("{0}")]
+    TimsTofPathError(#[from] TimsTofPathError),
 }

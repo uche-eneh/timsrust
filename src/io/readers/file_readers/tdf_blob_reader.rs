@@ -58,6 +58,10 @@ impl TdfBinFileReader {
             TimsTofFileType::TDF => path.tdf_bin()?,
             #[cfg(feature = "minitdf")]
             TimsTofFileType::MiniTDF => path.ms2_bin()?,
+            #[cfg(feature = "tsf")]
+            TimsTofFileType::TSF => {
+                return Err(TdfBlobReaderError::WrongDataset)
+            },
         };
         let file = File::open(bin_path)?;
         let mmap = unsafe { Mmap::map(&file)? };
@@ -145,6 +149,8 @@ pub enum TdfBlobReaderError {
     TimsTofPathError(#[from] TimsTofPathError),
     #[error("No binary file found")]
     NoBinary,
+    #[error("Wrong dataset type for TDF reader")]
+    WrongDataset,
 }
 
 #[derive(Debug, thiserror::Error)]

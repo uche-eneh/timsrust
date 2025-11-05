@@ -29,7 +29,9 @@ impl DDATDFPrecursorReader {
         let tdf_sql_reader = SqlReader::open(&path)?;
         let metadata = MetadataReader::new(&path)?;
         let rt_converter: Frame2RtConverter = metadata.rt_converter;
-        let im_converter: Scan2ImConverter = metadata.im_converter;
+        let im_converter: Scan2ImConverter = metadata
+            .im_converter
+            .ok_or(DDATDFPrecursorReaderError::MissingMobility)?;
         let sql_precursors = SqlPrecursor::from_sql_reader(&tdf_sql_reader)?;
         let reader = Self {
             sql_precursors,
@@ -68,4 +70,6 @@ pub enum DDATDFPrecursorReaderError {
     SqlReaderError(#[from] SqlReaderError),
     #[error("{0}")]
     MetadataReaderError(#[from] MetadataReaderError),
+    #[error("Missing mobility calibration data in metadata")]
+    MissingMobility,
 }

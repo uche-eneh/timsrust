@@ -31,6 +31,7 @@ tdf = ["rusqlite"]
 minitdf = ["parquet"]
 default = ["tdf", "minitdf", "serialize"]
 serialize = ["serde", "serde_json"]
+tsf = ["tdf"]
 
 [dev-dependencies]
 criterion = { version = "0.5.1", features = ["html_reports"] }

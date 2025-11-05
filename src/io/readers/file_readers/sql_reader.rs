@@ -4,12 +4,14 @@ pub mod metadata;
 pub mod pasef_frame_msms;
 pub mod precursors;
 pub mod quad_settings;
+#[cfg(feature = "tsf")]
+pub mod tsf_frames;
 
 use std::collections::HashMap;
 
 use rusqlite::{types::FromSql, Connection};
 
-use crate::readers::{TimsTofPathError, TimsTofPathLike};
+use crate::readers::{TimsTofFileType, TimsTofPathError, TimsTofPathLike};
 
 #[derive(Debug)]
 pub struct SqlReader {
@@ -19,7 +21,14 @@ pub struct SqlReader {
 impl SqlReader {
     pub fn open(path: impl TimsTofPathLike) -> Result<Self, SqlReaderError> {
         let path = path.to_timstof_path()?;
-        let connection = Connection::open(&path.tdf()?)?;
+        let connection = match path.file_type() {
+            #[cfg(feature = "tdf")]
+            TimsTofFileType::TDF => Connection::open(&path.tdf()?)?,
+            #[cfg(feature = "tsf")]
+            TimsTofFileType::TSF => Connection::open(&path.tsf()?)?,
+            #[cfg(feature = "minitdf")]
+            TimsTofFileType::MiniTDF => Connection::open(&path.tdf()?)?,
+        };
         Ok(Self { connection })
     }
 

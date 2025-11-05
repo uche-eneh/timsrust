@@ -28,7 +28,9 @@ impl DIATDFPrecursorReader {
         let tdf_sql_reader = SqlReader::open(&path)?;
         let metadata = MetadataReader::new(&path)?;
         let rt_converter: Frame2RtConverter = metadata.rt_converter;
-        let im_converter: Scan2ImConverter = metadata.im_converter;
+        let im_converter: Scan2ImConverter = metadata
+            .im_converter
+            .ok_or(DIATDFPrecursorReaderError::MissingMobility)?;
         let splitting_strategy = splitting_config.finalize(Some(im_converter));
         let expanded_quadrupole_settings =
             QuadrupoleSettingsReader::from_splitting(
@@ -75,4 +77,6 @@ pub enum DIATDFPrecursorReaderError {
     MetadataReaderError(#[from] MetadataReaderError),
     #[error("{0}")]
     QuadrupoleSettingsReaderError(#[from] QuadrupoleSettingsReaderError),
+    #[error("Missing mobility calibration data in metadata")]
+    MissingMobility,
 }

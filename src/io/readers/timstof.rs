@@ -9,6 +9,8 @@ pub enum TimsTofFileType {
     MiniTDF,
     #[cfg(feature = "tdf")]
     TDF,
+    #[cfg(feature = "tsf")]
+    TSF,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -25,6 +27,13 @@ impl TimsTofPath {
             return Ok(Self {
                 path,
                 file_type: TimsTofFileType::TDF,
+            });
+        }
+        #[cfg(feature = "tsf")]
+        if tsf(&path).is_ok() & tsf_bin(&path).is_ok() {
+            return Ok(Self {
+                path,
+                file_type: TimsTofFileType::TSF,
             });
         }
         #[cfg(feature = "minitdf")]
@@ -51,6 +60,16 @@ impl TimsTofPath {
         tdf_bin(self)
     }
 
+    #[cfg(feature = "tsf")]
+    pub fn tsf(&self) -> Result<PathBuf, TimsTofPathError> {
+        tsf(self)
+    }
+
+    #[cfg(feature = "tsf")]
+    pub fn tsf_bin(&self) -> Result<PathBuf, TimsTofPathError> {
+        tsf_bin(self)
+    }
+
     pub fn ms2_bin(&self) -> Result<PathBuf, TimsTofPathError> {
         ms2_bin(self)
     }
@@ -70,6 +89,16 @@ fn tdf(path: impl AsRef<Path>) -> Result<PathBuf, TimsTofPathError> {
 
 fn tdf_bin(path: impl AsRef<Path>) -> Result<PathBuf, TimsTofPathError> {
     find_extension(path, "analysis.tdf_bin")
+}
+
+#[cfg(feature = "tsf")]
+fn tsf(path: impl AsRef<Path>) -> Result<PathBuf, TimsTofPathError> {
+    find_extension(path, "analysis.tsf")
+}
+
+#[cfg(feature = "tsf")]
+fn tsf_bin(path: impl AsRef<Path>) -> Result<PathBuf, TimsTofPathError> {
+    find_extension(path, "analysis.tsf_bin")
 }
 
 fn ms2_bin(path: impl AsRef<Path>) -> Result<PathBuf, TimsTofPathError> {

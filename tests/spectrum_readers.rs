@@ -141,6 +141,30 @@ fn tdf_reader_dda() {
     }
 }
 
+#[cfg(feature = "tsf")]
+#[test]
+fn tsf_reader() {
+    let file_name = "test_tsf.d";
+    let file_path = get_local_directory()
+        .join(file_name)
+        .to_str()
+        .unwrap()
+        .to_string();
+    let reader = SpectrumReader::build()
+        .with_path(file_path)
+        .finalize()
+        .unwrap();
+    assert_eq!(reader.len(), 24, "TSF dataset should expose one spectrum per frame");
+    let spectrum = reader.get(0).expect("failed to read first TSF spectrum");   // message for if the reader fails
+    assert!(spectrum.precursor.is_none(), "TSF spectra must not contain precursor metadata");
+    assert_eq!(spectrum.mz_values.len(), 679);
+    assert_eq!(spectrum.intensities.len(), 679);
+    let spectrum2 = reader.get(1).expect("failed to read second TSF spectrum");
+    assert!(spectrum2.precursor.is_none(), "TSF spectra must not contain precursor metadata");
+    assert_eq!(spectrum2.mz_values.len(), 1178);
+    assert_eq!(spectrum2.intensities.len(), 1178);
+}
+
 #[cfg(feature = "tdf")]
 #[test]
 fn test_dia_even() {

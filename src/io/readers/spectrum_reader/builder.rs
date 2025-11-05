@@ -9,6 +9,8 @@ use super::{
 use super::minitdf::MiniTDFSpectrumReader;
 #[cfg(feature = "tdf")]
 use super::tdf::TDFSpectrumReader;
+#[cfg(feature = "tsf")]
+use super::tsf::TSFSpectrumReader;
 
 #[derive(Debug, Default, Clone)]
 pub struct SpectrumReaderBuilder {
@@ -47,6 +49,10 @@ impl SpectrumReaderBuilder {
                 #[cfg(feature = "tdf")]
                 TimsTofFileType::TDF => {
                     Box::new(TDFSpectrumReader::new(path, self.config)?)
+                },
+                #[cfg(feature = "tsf")]
+                TimsTofFileType::TSF => {
+                    Box::new(TSFSpectrumReader::new(path, self.config)?)
                 },
             };
         let mut reader = SpectrumReader { spectrum_reader };

@@ -6,6 +6,8 @@ mod minitdf;
 mod spectrum_trait;
 #[cfg(feature = "tdf")]
 mod tdf;
+#[cfg(feature = "tsf")]
+mod tsf;
 
 use super::TimsTofPathLike;
 use crate::ms_data::Spectrum;
