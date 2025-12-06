@@ -154,15 +154,15 @@ fn tsf_reader() {
         .with_path(file_path)
         .finalize()
         .unwrap();
-    assert_eq!(reader.len(), 24, "TSF dataset should expose one spectrum per frame");
+    assert_eq!(reader.len(), 255, "TSF dataset should expose one spectrum per frame");
     let spectrum = reader.get(0).expect("failed to read first TSF spectrum");   // message for if the reader fails
     assert!(spectrum.precursor.is_none(), "TSF spectra must not contain precursor metadata");
-    assert_eq!(spectrum.mz_values.len(), 679);
-    assert_eq!(spectrum.intensities.len(), 679);
+    assert_eq!(spectrum.mz_values.len(), 15636);
+    assert_eq!(spectrum.intensities.len(), 15636);
     let spectrum2 = reader.get(1).expect("failed to read second TSF spectrum");
     assert!(spectrum2.precursor.is_none(), "TSF spectra must not contain precursor metadata");
-    assert_eq!(spectrum2.mz_values.len(), 1178);
-    assert_eq!(spectrum2.intensities.len(), 1178);
+    assert_eq!(spectrum2.mz_values.len(), 14304);
+    assert_eq!(spectrum2.intensities.len(), 14304);
 }
 
 #[cfg(feature = "tdf")]

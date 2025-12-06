@@ -49,8 +49,8 @@ impl TsfBlobReader {
                 actual: decompressed.len(),
             });
         }
-        let (mz_bytes, intensity_bytes) = decompressed.split_at(num_peaks * 8);
-        let mz = mz_bytes
+        let (tof_bytes, intensity_bytes) = decompressed.split_at(num_peaks * 8);
+        let tof = tof_bytes
             .chunks_exact(8)
             .map(|chunk| f64::from_le_bytes(chunk.try_into().unwrap()))
             .collect();
@@ -58,7 +58,7 @@ impl TsfBlobReader {
             .chunks_exact(4)
             .map(|chunk| f32::from_le_bytes(chunk.try_into().unwrap()))
             .collect();
-        Ok(TsfSpectrumChunk { mz, intensities })
+        Ok(TsfSpectrumChunk { tof, intensities })
     }
 
     fn read_header(&self, offset: usize) -> Result<TsfChunkHeader, TsfBlobReaderError> {
@@ -83,7 +83,7 @@ impl TsfBlobReader {
 
 #[derive(Debug)]
 pub struct TsfSpectrumChunk {
-    pub mz: Vec<f64>,
+    pub tof: Vec<f64>,
     pub intensities: Vec<f32>,
 }
 

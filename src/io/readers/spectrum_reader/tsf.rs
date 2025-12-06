@@ -49,9 +49,9 @@ impl TSFSpectrumReader {
             .into_iter()
             .map(|frame| TsfFrame {
                 frame_id: frame.id,
-                offset: frame.offset,
-                num_peaks: frame.num_peaks,
-                _rt_seconds: frame.time,
+                offset: frame.binary_offset,
+                num_peaks: frame.peak_count,
+                _rt_seconds: frame.rt,
             })
             .collect();
         Ok(Self {
@@ -71,7 +71,7 @@ impl TSFSpectrumReader {
             .blob_reader
             .read_chunk(frame.offset, frame.num_peaks)?;
         let mz_values = chunk
-            .mz
+            .tof
             .into_iter()
             .map(|tof| self.mz_converter.convert(tof))
             .collect();

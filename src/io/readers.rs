@@ -18,3 +18,14 @@ pub use precursor_reader::*;
 pub use quad_settings_reader::*;
 pub use spectrum_reader::*;
 pub use timstof::*;
+
+#[cfg(feature = "tsf")]
+pub use file_readers::sql_reader::tsf_frames::SqlTsfFrame;
+pub use file_readers::sql_reader::{
+    ParseDefault, ReadableSqlHashMap, ReadableSqlTable, SqlReader,
+    SqlReaderError,
+};
+#[cfg(feature = "tsf")]
+pub use file_readers::tsf_blob_reader::{
+    TsfBlobReader, TsfBlobReaderError, TsfSpectrumChunk,
+};
