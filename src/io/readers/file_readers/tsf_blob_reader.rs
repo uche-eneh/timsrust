@@ -1,6 +1,7 @@
 use memmap2::Mmap;
 use std::{fs::File, io};
 use zstd::decode_all;
+use log::warn;
 
 use crate::readers::{TimsTofFileType, TimsTofPathError, TimsTofPathLike};
 
@@ -36,6 +37,14 @@ impl TsfBlobReader {
             .mmap
             .get(compressed_start..compressed_end)
             .ok_or(TsfBlobReaderError::CorruptData)?;
+        // Skipping incomplete/empty frame
+        if compressed.len() == 0 {
+            return Ok(TsfSpectrumChunk {
+                tof: Vec::new(),
+                intensities: Vec::new(),
+            });
+        }
+
         let decompressed = decode_all(compressed)
             .map_err(TsfBlobReaderError::Decompression)?;
         // check that the number of peaks matches with the decompressed data length. 

@@ -67,9 +67,9 @@ impl TSFSpectrumReader {
             .frames
             .get(index)
             .ok_or(TSFSpectrumReaderError::IndexOutOfBounds)?;
-        let chunk = self
-            .blob_reader
-            .read_chunk(frame.offset, frame.num_peaks)?;
+
+        let chunk = self.blob_reader.read_chunk(frame.offset, frame.num_peaks)?; 
+               
         let mz_values = chunk
             .tof
             .into_iter()
